@@ -1,0 +1,39 @@
+name: hourly-pipeline
+
+on:
+  schedule:
+    - cron: "5 * * * *"      # hourly
+  workflow_dispatch: {}
+  push:
+    branches: [main]
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with: { python-version: "3.11", cache: pip }
+      - run: pip install -r requirements-dev.txt
+      - run: pytest -q
+
+  refresh:
+    needs: test
+    if: github.event_name != 'push'
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with: { python-version: "3.11", cache: pip }
+      - run: pip install -r requirements-dev.txt
+      # Full history on first run is large; the cache keeps the lake between runs.
+      - uses: actions/cache@v4
+        with:
+          path: data
+          key: lake-${{ github.run_id }}
+          restore-keys: lake-
+      - run: python -m aqip ingest --incremental
+        env: { PYTHONPATH: src }
+      - run: python -m aqip pipeline
+        env: { PYTHONPATH: src }
+

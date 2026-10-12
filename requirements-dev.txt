@@ -1,0 +1,16 @@
+pandas>=2.2
+numpy
+pyarrow
+requests
+duckdb
+scikit-learn
+lightgbm
+shap
+matplotlib
+joblib
+tabulate
+fastapi
+uvicorn
+streamlit
+plotly
+pytest
